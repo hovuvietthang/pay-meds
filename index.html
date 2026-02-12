@@ -3,85 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cổng Thanh Toán - LamThangPhat</title>
+    <title>Đang xử lý thanh toán | LamThangPhat Pay</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f8; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 400px; text-align: center; }
-        .logo { font-weight: bold; font-size: 24px; color: #333; margin-bottom: 20px; display: block; text-decoration: none; }
-        .product-name { font-size: 18px; color: #555; margin-bottom: 10px; }
-        .price { font-size: 32px; font-weight: bold; color: #2ecc71; margin-bottom: 30px; }
-        .btn { background-color: #007bff; color: white; border: none; padding: 15px 30px; font-size: 16px; border-radius: 8px; cursor: pointer; width: 100%; transition: background 0.3s; font-weight: 600; }
-        .btn:hover { background-color: #0056b3; }
-        .btn:disabled { background-color: #ccc; cursor: not-allowed; }
-        .footer { margin-top: 20px; font-size: 12px; color: #999; }
-        .error { color: red; font-size: 14px; margin-top: 10px; display: none; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; max-width: 400px; width: 90%; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        h2 { color: #333; margin-bottom: 10px; font-size: 20px; }
+        p { color: #666; margin-bottom: 20px; font-size: 14px; }
+        .error-box { color: #d9534f; background: #f9d6d5; padding: 10px; border-radius: 8px; display: none; font-size: 13px; margin-top: 15px; }
+        .btn-retry { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <a href="#" class="logo">LamThangPhat Pay</a>
+    <div class="loader" id="spinner"></div>
+    <h2 id="statusTitle">Đang kết nối cổng thanh toán...</h2>
+    <p id="statusDesc">Vui lòng không tắt trình duyệt, hệ thống đang tạo giao dịch an toàn.</p>
     
-    <div class="product-name">Gói Phần Mềm VIP (1 Năm)</div>
-    <div class="price">500.000 đ</div>
-
-    <button id="payBtn" class="btn" onclick="xuLyThanhToan()">
-        THANH TOÁN NGAY
-    </button>
-    
-    <div id="errorMsg" class="error"></div>
-
-    <div class="footer">
-        Thanh toán an toàn qua SePay<br>
-        Được bảo mật bởi LamThangPhat
-    </div>
+    <div id="errorBox" class="error-box"></div>
+    <button id="retryBtn" class="btn-retry" onclick="location.reload()">Thử lại</button>
 </div>
 
 <script>
-    // ⚠️ THAY LINK CỦA BẠN VÀO ĐÂY (Link Google Script /exec)
-    const API_URL = "https://script.google.com/macros/s/AKfycbx.....CODE_CUA_BAN...../exec";
+    // 🔴 THAY LINK SERVER TỔNG CỦA BẠN VÀO ĐÂY (Link Google Script đuôi /exec)
+    const GATEWAY_URL = "https://script.google.com/macros/s/AKfycbxx9KT84my36bzSGKdLrgXWhL_kX0X7YFtBlU_VCP3NUVaytDo0cno919NDeY77mg26/exec";
 
-    async function xuLyThanhToan() {
-        const btn = document.getElementById('payBtn');
-        const errorMsg = document.getElementById('errorMsg');
-        
-        // 1. Hiệu ứng loading
-        btn.innerHTML = "Đang kết nối SePay...";
-        btn.disabled = true;
-        errorMsg.style.display = 'none';
+    // Tự động chạy khi trang web tải xong
+    window.onload = function() {
+        processPayment();
+    };
+
+    async function processPayment() {
+        // 1. Lấy thông tin từ URL (Do phần mềm con gửi sang)
+        // Ví dụ: thanhtoan.lamthangphat.com/?amt=50000&note=MuaVip&callback=https://...
+        const params = new URLSearchParams(window.location.search);
+        const amount = params.get('amt');
+        const note = params.get('note');
+        const clientUrl = params.get('callback');
+
+        // Kiểm tra dữ liệu đầu vào
+        if (!amount || !clientUrl) {
+            showError("Thiếu thông tin thanh toán (Số tiền hoặc Link trả về).");
+            return;
+        }
 
         try {
-            // 2. Dữ liệu gửi đi (Bạn có thể lấy từ Input nếu muốn)
-            const payload = {
-                amount: 500000,          // Số tiền
-                note: "Mua Goi VIP 1 Nam" // Nội dung đơn
-            };
-
-            // 3. Gọi sang Google Script
-            // fetch với method POST để gửi dữ liệu
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                body: JSON.stringify(payload) 
-                // Google Script Web App tự động xử lý CORS nếu deploy đúng quyền "Anyone"
+            // 2. Gọi về Server Tổng để đăng ký đơn hàng
+            const response = await fetch(GATEWAY_URL, {
+                method: "POST",
+                // Google Script yêu cầu mode no-cors hoặc redirect, nhưng để lấy JSON ta dùng cách chuẩn:
+                // Lưu ý: Cần deploy Web App quyền "Anyone" thì mới fetch được
+                body: JSON.stringify({
+                    action: "REGISTER_ORDER",
+                    amount: amount,
+                    note: note,
+                    client_url: clientUrl
+                })
             });
 
-            const result = await response.json();
+            const data = await response.json();
 
-            // 4. Xử lý kết quả
-            if (result.status === "success" && result.payment_url) {
-                // Chuyển hướng khách sang SePay
-                window.location.href = result.payment_url;
+            // 3. Xử lý kết quả trả về
+            if (data.success && data.url) {
+                document.getElementById('statusTitle').innerText = "Đang chuyển hướng...";
+                // Chuyển khách sang SePay
+                window.location.href = data.url;
             } else {
-                throw new Error(result.message || "Lỗi không xác định");
+                throw new Error(data.error || "Không lấy được link thanh toán");
             }
 
         } catch (err) {
             console.error(err);
-            btn.innerHTML = "THỬ LẠI";
-            btn.disabled = false;
-            errorMsg.innerText = "Lỗi: Không thể tạo link thanh toán. Vui lòng thử lại.";
-            errorMsg.style.display = 'block';
+            showError("Lỗi kết nối máy chủ: " + err.message);
         }
+    }
+
+    function showError(msg) {
+        document.getElementById('spinner').style.display = 'none';
+        document.getElementById('statusTitle').innerText = "Đã xảy ra lỗi";
+        document.getElementById('statusDesc').style.display = 'none';
+        const box = document.getElementById('errorBox');
+        box.innerText = msg;
+        box.style.display = 'block';
+        document.getElementById('retryBtn').style.display = 'inline-block';
     }
 </script>
 
