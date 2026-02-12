@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cổng Thanh Toán - LamThangPhat</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f8; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 400px; text-align: center; }
+        .logo { font-weight: bold; font-size: 24px; color: #333; margin-bottom: 20px; display: block; text-decoration: none; }
+        .product-name { font-size: 18px; color: #555; margin-bottom: 10px; }
+        .price { font-size: 32px; font-weight: bold; color: #2ecc71; margin-bottom: 30px; }
+        .btn { background-color: #007bff; color: white; border: none; padding: 15px 30px; font-size: 16px; border-radius: 8px; cursor: pointer; width: 100%; transition: background 0.3s; font-weight: 600; }
+        .btn:hover { background-color: #0056b3; }
+        .btn:disabled { background-color: #ccc; cursor: not-allowed; }
+        .footer { margin-top: 20px; font-size: 12px; color: #999; }
+        .error { color: red; font-size: 14px; margin-top: 10px; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <a href="#" class="logo">LamThangPhat Pay</a>
+    
+    <div class="product-name">Gói Phần Mềm VIP (1 Năm)</div>
+    <div class="price">500.000 đ</div>
+
+    <button id="payBtn" class="btn" onclick="xuLyThanhToan()">
+        THANH TOÁN NGAY
+    </button>
+    
+    <div id="errorMsg" class="error"></div>
+
+    <div class="footer">
+        Thanh toán an toàn qua SePay<br>
+        Được bảo mật bởi LamThangPhat
+    </div>
+</div>
+
+<script>
+    // ⚠️ THAY LINK CỦA BẠN VÀO ĐÂY (Link Google Script /exec)
+    const API_URL = "https://script.google.com/macros/s/AKfycbx.....CODE_CUA_BAN...../exec";
+
+    async function xuLyThanhToan() {
+        const btn = document.getElementById('payBtn');
+        const errorMsg = document.getElementById('errorMsg');
+        
+        // 1. Hiệu ứng loading
+        btn.innerHTML = "Đang kết nối SePay...";
+        btn.disabled = true;
+        errorMsg.style.display = 'none';
+
+        try {
+            // 2. Dữ liệu gửi đi (Bạn có thể lấy từ Input nếu muốn)
+            const payload = {
+                amount: 500000,          // Số tiền
+                note: "Mua Goi VIP 1 Nam" // Nội dung đơn
+            };
+
+            // 3. Gọi sang Google Script
+            // fetch với method POST để gửi dữ liệu
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload) 
+                // Google Script Web App tự động xử lý CORS nếu deploy đúng quyền "Anyone"
+            });
+
+            const result = await response.json();
+
+            // 4. Xử lý kết quả
+            if (result.status === "success" && result.payment_url) {
+                // Chuyển hướng khách sang SePay
+                window.location.href = result.payment_url;
+            } else {
+                throw new Error(result.message || "Lỗi không xác định");
+            }
+
+        } catch (err) {
+            console.error(err);
+            btn.innerHTML = "THỬ LẠI";
+            btn.disabled = false;
+            errorMsg.innerText = "Lỗi: Không thể tạo link thanh toán. Vui lòng thử lại.";
+            errorMsg.style.display = 'block';
+        }
+    }
+</script>
+
+</body>
+</html>
