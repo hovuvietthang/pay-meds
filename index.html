@@ -3,51 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đang xử lý thanh toán | LamThangPhat Pay</title>
+    <title>Thanh toán | LamThangPhat Pay</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; max-width: 400px; width: 90%; }
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 20px auto; }
+        body { font-family: -apple-system, system-ui, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; max-width: 380px; width: 90%; }
+        
+        /* Modal Styles */
+        #paymentModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; z-index: 9999; }
+        .modal-box { background: white; padding: 25px; border-radius: 20px; width: 320px; text-align: center; position: relative; animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        .qr-code { width: 100%; border: 1px solid #eee; border-radius: 12px; margin: 15px 0; }
+        .info-row { background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: left; margin-bottom: 10px; font-size: 14px; }
+        .info-row b { color: #007bff; float: right; }
+        
+        .status-badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-top: 10px; }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-success { background: #d4edda; color: #155724; display: none; }
+
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto 15px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        h2 { color: #333; margin-bottom: 10px; font-size: 20px; }
-        p { color: #666; margin-bottom: 20px; font-size: 14px; }
+        
+        .btn-close { position: absolute; top: 10px; right: 15px; font-size: 24px; cursor: pointer; color: #ccc; border: none; background: none; }
+        .btn-close:hover { color: #333; }
         .error-box { color: #d9534f; background: #f9d6d5; padding: 10px; border-radius: 8px; display: none; font-size: 13px; margin-top: 15px; }
-        .btn-retry { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
 
-<div class="card">
+<div class="card" id="mainCard">
     <div class="loader" id="spinner"></div>
-    <h2 id="statusTitle">Đang kết nối cổng thanh toán...</h2>
-    <p id="statusDesc">Vui lòng không tắt trình duyệt, hệ thống đang tạo giao dịch an toàn.</p>
-    
+    <h2 id="statusTitle">Khởi tạo giao dịch...</h2>
+    <p id="statusDesc">Vui lòng đợi trong giây lát để hệ thống tạo mã QR thanh toán.</p>
     <div id="errorBox" class="error-box"></div>
-    <button id="retryBtn" class="btn-retry" onclick="location.reload()">Thử lại</button>
+</div>
+
+<div id="paymentModal">
+    <div class="modal-box">
+        <button class="btn-close" onclick="location.reload()">&times;</button>
+        <h3 style="margin: 0 0 5px 0; font-size: 18px;">Thanh toán QR</h3>
+        <div class="status-badge status-pending" id="badgePending">Đang chờ chuyển khoản...</div>
+        <div class="status-badge status-success" id="badgeSuccess">✅ Thành công!</div>
+        
+        <img id="qrImg" src="" class="qr-code" alt="Mã QR Thanh toán">
+        
+        <div class="info-row">Số tiền: <b id="qrAmount">0đ</b></div>
+        <div class="info-row">Nội dung: <b id="qrNote">Đang tải...</b></div>
+        
+        <p style="font-size: 11px; color: #d9534f; margin-top: 10px;">
+            * Vui lòng quét mã và <b>giữ nguyên nội dung</b> chuyển khoản để được duyệt tự động.
+        </p>
+    </div>
 </div>
 
 <script>
-    // Link Server Tổng của bạn (Tôi đã giữ nguyên link bạn cung cấp)
     const GATEWAY_URL = "https://script.google.com/macros/s/AKfycbxx9KT84my36bzSGKdLrgXWhL_kX0X7YFtBlU_VCP3NUVaytDo0cno919NDeY77mg26/exec";
+    let checkInterval = null;
 
-    // Tự động chạy khi trang web tải xong
-    window.onload = function() {
-        processPayment();
-    };
+    window.onload = processPayment;
 
     async function processPayment() {
         const params = new URLSearchParams(window.location.search);
         const amount = params.get('amt');
-        const note = params.get('note');
+        const note = params.get('note') || 'Thanh toan';
         const clientUrl = params.get('callback');
 
-        if (!amount || !clientUrl) {
-            showError("Thiếu thông tin thanh toán (Số tiền hoặc Link trả về).");
+        if (!amount) {
+            showError("Thiếu số tiền thanh toán.");
             return;
         }
 
         try {
-            // Gọi về Server Tổng để lấy dữ liệu tạo Form
+            // 1. Đăng ký đơn hàng ngầm qua Script Database
             const response = await fetch(GATEWAY_URL, {
                 method: "POST",
                 body: JSON.stringify({
@@ -60,53 +87,68 @@
 
             const data = await response.json();
 
-            // --- ĐOẠN XỬ LÝ MỚI (FIX LỖI 404) ---
-            // Kiểm tra xem server có trả về dữ liệu payment_data không
-            if (data.success && data.payment_data) {
-                document.getElementById('statusTitle').innerText = "Đang chuyển hướng...";
+            if (data.success) {
+                const orderId = data.order_id;
                 
-                // Gọi hàm tạo Form POST và gửi đi ngay lập tức
-                postToSePay(data.payment_data.endpoint, data.payment_data.params);
+                // 2. Tạo Link QR VietQR (Dùng ngân hàng MB của bạn)
+                const qrUrl = `https://img.vietqr.io/image/MB-0345056117-compact.png?amount=${amount}&addInfo=${orderId}`;
                 
-            } else {
-                throw new Error(data.error || "Không lấy được dữ liệu thanh toán");
-            }
+                // 3. Hiển thị Popup
+                document.getElementById('qrImg').src = qrUrl;
+                document.getElementById('qrAmount').innerText = parseInt(amount).toLocaleString() + "đ";
+                document.getElementById('qrNote').innerText = orderId;
+                document.getElementById('paymentModal').style.display = 'flex';
+                document.getElementById('mainCard').style.display = 'none';
 
+                // 4. Bắt đầu kiểm tra trạng thái tự động
+                startPolling(orderId);
+            } else {
+                throw new Error(data.error || "Lỗi đăng ký đơn hàng");
+            }
         } catch (err) {
-            console.error(err);
-            showError("Lỗi kết nối máy chủ: " + err.message);
+            showError("Lỗi kết nối: " + err.message);
         }
     }
 
-    // --- HÀM MỚI: TẠO FORM ẨN VÀ POST SANG SEPAY ---
-    function postToSePay(endpoint, params) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = endpoint;
-        
-        // Tạo các thẻ input ẩn cho từng tham số
-        for (const key in params) {
-            if (params.hasOwnProperty(key)) {
-                const hiddenField = document.createElement('input');
-                hiddenField.type = 'hidden';
-                hiddenField.name = key;
-                hiddenField.value = params[key];
-                form.appendChild(hiddenField);
-            }
-        }
+    function startPolling(orderId) {
+        checkInterval = setInterval(async () => {
+            try {
+                // Gọi GET đến Script để kiểm tra xem đơn này đã SUCCESS chưa
+                const res = await fetch(`${GATEWAY_URL}?action=CHECK_STATUS&order_id=${orderId}`);
+                const status = await res.json();
 
-        document.body.appendChild(form);
-        form.submit(); // Tự động bấm nút gửi
+                if (status.isSuccess) {
+                    clearInterval(checkInterval);
+                    showSuccessUI();
+                }
+            } catch (e) {
+                console.log("Đang chờ thanh toán...");
+            }
+        }, 3000); // 3 giây kiểm tra 1 lần
+    }
+
+    function showSuccessUI() {
+        document.getElementById('badgePending').style.display = 'none';
+        document.getElementById('badgeSuccess').style.display = 'inline-block';
+        document.getElementById('qrImg').style.opacity = '0.3';
+        
+        setTimeout(() => {
+            const params = new URLSearchParams(window.location.search);
+            const callback = params.get('callback');
+            if (callback) {
+                window.location.href = callback; // Quay về Client khi xong
+            } else {
+                alert("Thanh toán thành công!");
+            }
+        }, 2000);
     }
 
     function showError(msg) {
         document.getElementById('spinner').style.display = 'none';
-        document.getElementById('statusTitle').innerText = "Đã xảy ra lỗi";
-        document.getElementById('statusDesc').style.display = 'none';
+        document.getElementById('statusTitle').innerText = "Thất bại";
         const box = document.getElementById('errorBox');
         box.innerText = msg;
         box.style.display = 'block';
-        document.getElementById('retryBtn').style.display = 'inline-block';
     }
 </script>
 
