@@ -3,149 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thanh toán MEDSYSTEM | Lâm Thắng Phát</title>
+    <title>Thanh toán an toàn | Lâm Thắng Phát</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
-        .qr-gradient { background: radial-gradient(circle at center, #ffffff 0%, #f1f5f9 100%); }
-        .copy-tooltip { display: none; position: absolute; top: -30px; left: 50%; transform: translateX(-50%); background: #0f172a; color: white; padding: 4px 10px; border-radius: 6px; font-size: 10px; z-index: 50; }
-        .copy-tooltip::after { content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%); border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 5px solid #0f172a; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .qr-area-gradient { background: radial-gradient(circle at top left, #f8fafc 0%, #f1f5f9 100%); }
+        .copy-tooltip { display: none; position: absolute; top: -35px; left: 50%; transform: translateX(-50%); background: #0f172a; color: white; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 600; z-index: 50; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        .copy-tooltip::after { content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%); border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 6px solid #0f172a; }
+        .glass-effect { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.3); }
     </style>
 </head>
-<body class="min-h-screen flex flex-col antialiased text-slate-900">
+<body class="bg-slate-50 min-h-screen flex flex-col antialiased text-slate-900">
 
-    <header class="w-full py-3 px-6 bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div class="max-w-5xl mx-auto flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg">
-                    <i class="fa-solid fa-shield-check text-lg"></i>
+    <header class="w-full py-5 px-6 bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-blue-200 rotate-3">
+                    <i class="fa-solid fa-shield-check text-2xl"></i>
                 </div>
                 <div>
-                    <h1 class="font-extrabold text-base tracking-tighter text-slate-900 uppercase leading-none">Công ty TNHH TM&DV Lâm Thắng Phát</h1>
-                    <p class="text-[9px] text-blue-600 font-black uppercase tracking-widest mt-1">Cổng thanh toán phần mềm xếp giờ medssystem</p>
+                    <h1 class="font-extrabold text-xl tracking-tighter text-slate-900 uppercase leading-none">Lâm Thắng Phát</h1>
+                    <p class="text-[10px] text-blue-600 font-extrabold tracking-[0.2em] uppercase mt-1.5 flex items-center">
+                        <span class="w-1.5 h-1.5 bg-blue-600 rounded-full mr-1.5 animate-pulse"></span>
+                        Hệ thống thanh toán bảo mật
+                    </p>
                 </div>
             </div>
-            <div class="hidden sm:flex items-center space-x-2 bg-blue-50 px-3 py-1 rounded-full text-blue-700">
-                <i class="fa-solid fa-lock text-[10px]"></i>
-                <span class="text-[9px] font-black uppercase">AES-256 Encrypted</span>
+            <div class="hidden md:flex items-center space-x-6">
+                <div class="text-right">
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Phiên giao dịch</p>
+                    <p class="text-xs font-bold text-slate-700 uppercase" id="sessionTime">Khởi tạo...</p>
+                </div>
+                <div class="h-8 w-px bg-slate-200"></div>
+                <div class="flex items-center space-x-2 bg-green-50 px-4 py-2 rounded-xl border border-green-100">
+                    <i class="fa-solid fa-circle-check text-green-500 text-[10px]"></i>
+                    <span class="text-[10px] font-bold text-green-700 uppercase tracking-wider">Chứng chỉ SSL Active</span>
+                </div>
             </div>
         </div>
     </header>
 
-    <main class="flex-grow flex items-center justify-center p-2 sm:p-4">
+    <main class="flex-grow flex items-center justify-center p-4 md:p-10">
         
-        <div id="mainCard" class="w-full max-w-sm bg-white rounded-3xl shadow-xl p-8 text-center border border-slate-100">
-            <div class="w-12 h-12 border-4 border-slate-100 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-            <h2 class="text-lg font-bold">Đang kết nối...</h2>
+        <div id="mainCard" class="w-full max-w-lg bg-white rounded-[3rem] shadow-2xl shadow-slate-200/50 p-12 text-center border border-white">
+            <div class="mb-10 relative inline-block">
+                <div class="w-24 h-24 border-[8px] border-slate-50 border-t-blue-600 rounded-full animate-spin"></div>
+                <i class="fa-solid fa-fingerprint absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-blue-600 text-2xl"></i>
+            </div>
+            <h2 class="text-2xl font-black mb-4 tracking-tight text-slate-800">Đang thiết lập cổng...</h2>
+            <p class="text-slate-500 text-sm leading-relaxed px-6 font-medium">Chúng tôi đang xác thực gói dịch vụ <strong>MEDS Software</strong> và chuẩn bị kênh truyền dữ liệu ngân hàng riêng biệt.</p>
+            <div id="errorBox" class="hidden mt-10 p-5 bg-red-50 text-red-600 rounded-2xl text-xs border border-red-100 font-bold italic shadow-sm"></div>
         </div>
 
-        <div id="paymentModal" class="hidden w-full max-w-5xl flex flex-col md:flex-row bg-white rounded-[2rem] shadow-2xl overflow-hidden border border-slate-100">
+        <div id="paymentModal" class="hidden w-full max-w-6xl flex flex-col md:flex-row bg-white rounded-[3.5rem] shadow-2xl shadow-slate-400/20 overflow-hidden border border-slate-100">
             
-            <div class="md:w-[48%] p-6 sm:p-10 qr-gradient flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-slate-100">
-                <div class="relative">
-                    <div class="bg-white p-4 rounded-3xl shadow-xl border border-slate-50 relative z-10">
-                        <img id="qrImg" src="" class="w-72 h-72 lg:w-96 lg:h-96 object-contain" alt="QR VietQR">
+            <div class="md:w-[45%] p-10 lg:p-16 qr-area-gradient flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-slate-100 relative">
+                <div class="absolute top-8 left-8">
+                    <div class="bg-white/60 px-4 py-2 rounded-2xl border border-white flex items-center space-x-2 shadow-sm">
+                        <i class="fa-solid fa-qrcode text-slate-400"></i>
+                        <span class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">VietQR Standard</span>
+                    </div>
+                </div>
+
+                <div class="relative group">
+                    <div class="bg-white p-8 rounded-[3rem] shadow-2xl shadow-slate-200 transition-all group-hover:shadow-blue-100 duration-500 relative z-10">
+                        <img id="qrImg" src="" class="w-64 h-64 lg:w-80 lg:h-80 object-contain rounded-xl" alt="Mã QR VietQR">
                         
-                        <div id="qrOverlaySuccess" class="hidden absolute inset-0 bg-white/90 backdrop-blur-md rounded-3xl flex flex-col items-center justify-center z-20 transition-all">
-                            <i class="fa-solid fa-circle-check text-green-500 text-7xl mb-4 animate-bounce"></i>
-                            <span class="font-black text-green-600 text-xl uppercase italic">Thành công</span>
+                        <div id="qrOverlaySuccess" class="hidden absolute inset-0 bg-white/95 backdrop-blur-md rounded-[3rem] flex flex-col items-center justify-center z-20 transition-all duration-700">
+                            <div class="w-28 h-28 bg-green-500 rounded-full flex items-center justify-center text-white text-6xl mb-6 shadow-2xl shadow-green-200 animate-bounce">
+                                <i class="fa-solid fa-check"></i>
+                            </div>
+                            <h4 class="font-black text-green-600 text-2xl uppercase tracking-tighter">Giao dịch thành công</h4>
+                            <p class="text-slate-400 text-[10px] font-bold mt-2 uppercase tracking-widest">Hệ thống đang điều hướng...</p>
                         </div>
                     </div>
                 </div>
                 
-                <div class="mt-6 flex items-center space-x-2 px-4 py-2 bg-white/80 rounded-full border border-slate-200 shadow-sm animate-pulse">
-                    <span class="w-2 h-2 bg-amber-500 rounded-full"></span>
-                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Đang kiểm tra giao dịch...</span>
+                <div class="mt-12 text-center">
+                    <div class="inline-flex items-center space-x-3 bg-blue-600 px-6 py-3 rounded-2xl shadow-lg shadow-blue-200 animate-pulse">
+                        <i class="fa-solid fa-spinner fa-spin text-white"></i>
+                        <span class="text-white text-xs font-extrabold uppercase tracking-widest">Đang chờ bạn quét mã...</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="md:w-[52%] p-6 sm:p-10 flex flex-col">
-                <div class="mb-6">
-                    <span id="badgePending" class="inline-block bg-blue-100 text-blue-700 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest mb-2">Đang chờ tiền về</span>
-                    <h3 class="text-3xl font-black text-slate-900 tracking-tighter">Xác nhận thanh toán</h3>
+            <div class="md:w-[55%] p-10 lg:p-16 flex flex-col">
+                <div class="mb-12">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <span class="w-12 h-1.5 bg-blue-600 rounded-full"></span>
+                        <span class="text-xs font-black text-slate-400 uppercase tracking-[0.3em]">Hóa đơn định danh</span>
+                    </div>
+                    <h3 class="text-4xl lg:text-5xl font-black text-slate-900 tracking-tighter leading-[1.1]">Quét mã để <br><span class="text-blue-600 underline decoration-blue-100">Kích hoạt</span></h3>
                 </div>
 
-                <div class="space-y-2 mb-6">
-                    <div class="group relative bg-slate-50 p-3.5 rounded-xl border border-slate-100 hover:border-blue-300 transition-all cursor-pointer" onclick="copyText(paymentData.name, 'name')">
-                        <p class="text-[8px] font-bold text-slate-400 uppercase mb-1">Đơn vị thụ hưởng</p>
+                <div class="space-y-4 mb-12">
+                    <div class="group relative bg-slate-50 p-5 rounded-[1.5rem] border border-slate-100 hover:border-blue-400 hover:bg-white transition-all cursor-pointer" onclick="copyText(paymentData.name, 'name')">
                         <div class="flex justify-between items-center">
-                            <p id="targetName" class="text-xs font-black text-slate-800 uppercase italic">---</p>
-                            <i class="fa-regular fa-copy text-blue-500 opacity-50 group-hover:opacity-100"></i>
+                            <div>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Tên thụ hưởng (Đã xác minh)</p>
+                                <p id="targetName" class="text-sm font-black text-slate-800 uppercase tracking-tight">---</p>
+                            </div>
+                            <div class="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-300 group-hover:text-blue-600 group-hover:border-blue-100 transition-all shadow-sm">
+                                <i class="fa-regular fa-copy"></i>
+                            </div>
                         </div>
-                        <span id="tip-name" class="copy-tooltip">Đã copy tên</span>
+                        <span id="tip-name" class="copy-tooltip">Đã sao chép tên</span>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-2">
-                        <div class="group relative bg-slate-50 p-3.5 rounded-xl border border-slate-100 hover:border-blue-300 transition-all cursor-pointer" onclick="copyText(paymentData.stk, 'stk')">
-                            <p id="bankDisplay" class="text-[8px] font-bold text-slate-400 uppercase mb-1 italic text-ellipsis overflow-hidden whitespace-nowrap">Số tài khoản</p>
-                            <div class="flex justify-between items-center text-slate-800">
-                                <p id="targetSTK" class="text-base font-black tracking-tighter">---</p>
-                                <i class="fa-regular fa-copy text-blue-500 opacity-50"></i>
-                            </div>
-                            <span id="tip-stk" class="copy-tooltip">Đã copy STK</span>
-                        </div>
-                        <div class="group relative bg-blue-600 p-3.5 rounded-xl text-white shadow-lg shadow-blue-100 cursor-pointer" onclick="copyText(paymentData.amt, 'amt')">
-                            <p class="text-[8px] font-bold text-blue-200 uppercase mb-1 italic">Tổng thanh toán</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="group relative bg-slate-50 p-5 rounded-[1.5rem] border border-slate-100 hover:border-blue-400 hover:bg-white transition-all cursor-pointer" onclick="copyText(paymentData.stk, 'stk')">
+                            <p id="bankDisplay" class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 italic">Số tài khoản</p>
                             <div class="flex justify-between items-center">
-                                <p id="qrAmountDisplay" class="text-base font-black tracking-tighter">0đ</p>
-                                <i class="fa-regular fa-copy opacity-60"></i>
+                                <p id="targetSTK" class="text-xl font-black text-slate-800 tracking-tighter">---</p>
+                                <i class="fa-regular fa-copy text-slate-300 group-hover:text-blue-600 transition-colors"></i>
                             </div>
-                            <span id="tip-amt" class="copy-tooltip text-slate-900">Đã copy tiền</span>
+                            <span id="tip-stk" class="copy-tooltip">Đã sao chép STK</span>
+                        </div>
+                        <div class="group relative bg-blue-600 p-5 rounded-[1.5rem] shadow-xl shadow-blue-100 hover:shadow-blue-300 transition-all cursor-pointer text-white" onclick="copyText(paymentData.amt, 'amt')">
+                            <p class="text-[10px] font-black text-blue-200 uppercase tracking-widest mb-1.5">Tổng thanh toán</p>
+                            <div class="flex justify-between items-center">
+                                <p id="qrAmountDisplay" class="text-xl font-black tracking-tighter leading-none">0đ</p>
+                                <i class="fa-regular fa-copy opacity-50 group-hover:opacity-100 transition-opacity"></i>
+                            </div>
+                            <span id="tip-amt" class="copy-tooltip text-slate-900">Đã sao chép số tiền</span>
                         </div>
                     </div>
 
-                    <div class="group relative bg-amber-50 p-5 rounded-2xl border-2 border-dashed border-amber-300 hover:bg-white transition-all cursor-pointer text-center" onclick="copyText(paymentData.note, 'note')">
-                        <p class="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-2">Nội dung chuyển khoản quan trọng</p>
-                        <div class="flex items-center justify-center space-x-3">
-                            <p id="qrNoteDisplay" class="text-3xl font-black text-slate-900 tracking-tighter uppercase">---</p>
-                            <div class="bg-amber-500 text-white w-9 h-9 rounded-lg flex items-center justify-center shadow-md"><i class="fa-solid fa-copy text-sm"></i></div>
+                    <div class="group relative bg-amber-50 p-8 rounded-[2.5rem] border-2 border-dashed border-amber-300 hover:bg-white transition-all cursor-pointer flex flex-col items-center" onclick="copyText(paymentData.note, 'note')">
+                        <p class="text-[10px] font-black text-amber-600 uppercase tracking-[0.4em] mb-4">Nội dung bắt buộc</p>
+                        <div class="flex items-center space-x-6">
+                            <p id="qrNoteDisplay" class="text-4xl font-black text-slate-900 tracking-[0.15em] uppercase leading-none">---</p>
+                            <div class="bg-amber-500 text-white w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-200 transform group-hover:rotate-6 transition-transform">
+                                <i class="fa-solid fa-copy text-lg"></i>
+                            </div>
                         </div>
-                        <span id="tip-note" class="copy-tooltip">Đã copy nội dung</span>
+                        <p class="text-[10px] text-slate-400 font-bold mt-5 uppercase tracking-widest italic opacity-60">Vui lòng không thay đổi nội dung này</p>
+                        <span id="tip-note" class="copy-tooltip">Đã sao chép nội dung</span>
                     </div>
                 </div>
 
-                <div class="mt-auto">
-                    <button onclick="location.reload()" class="w-full py-3 text-slate-400 hover:text-slate-900 text-[9px] font-bold uppercase tracking-widest border border-slate-100 rounded-xl hover:bg-slate-50 transition-all">
-                        <i class="fa-solid fa-rotate-right mr-2"></i> Làm mới yêu cầu
+                <div class="mt-auto flex flex-col items-center">
+                    <button onclick="location.reload()" class="group text-slate-400 hover:text-slate-900 text-[10px] font-black uppercase tracking-[0.3em] transition-all flex items-center">
+                        <i class="fa-solid fa-arrow-rotate-left mr-2 group-hover:rotate-180 transition-transform duration-500"></i> Làm mới yêu cầu thanh toán
                     </button>
                 </div>
             </div>
         </div>
     </main>
 
-    <footer class="w-full py-8 px-6 bg-slate-900 text-slate-500 border-t border-slate-800">
-        <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 text-[10px] font-medium tracking-wider uppercase">
+    <footer class="w-full py-12 px-6 bg-slate-900 text-slate-500">
+        <div class="max-w-6xl mx-auto flex flex-col lg:flex-row justify-between items-start gap-12">
+            <div class="space-y-6 max-w-xl">
+                <div class="flex items-center space-x-2 text-white font-black tracking-tighter uppercase italic text-lg">
+                    <span class="text-blue-500 uppercase">LamThangPhat</span> Core System
+                </div>
+                <div class="space-y-2">
+                    <p class="text-slate-200 text-sm font-black tracking-tight uppercase leading-relaxed">CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ LÂM THẮNG PHÁT</p>
+                    <div class="flex flex-col space-y-1.5 text-[11px] font-bold tracking-widest uppercase opacity-70">
+                        <p><i class="fa-solid fa-fingerprint w-5 text-blue-500"></i> Mã số thuế: <span class="text-slate-200">4001299968</span></p>
+                        <p><i class="fa-solid fa-location-dot w-5 text-blue-500"></i> Tam Hòa, xã Hà Nha, TP Đà Nẵng</p>
+                    </div>
+                </div>
+            </div>
             
-            <div class="space-y-3">
-                <p class="text-white text-xs font-black tracking-tighter italic italic tracking-[0.1em] normal-case">Về chúng tôi</p>
-                <p class="leading-relaxed"><span class="text-slate-300">Công ty TNHH TM&DV Lâm Thắng Phát</span><br>
-                MST: 4001299968<br>
-                Hà Nha, xã Hà Nha, TP Đà Nẵng</p>
-            </div>
-
-            <div class="space-y-3">
-                <p class="text-white text-xs font-black tracking-tighter normal-case tracking-[0.1em]">Giải pháp MEDSYSTEM</p>
-                <div class="flex flex-col space-y-2">
-                    <a href="#" class="hover:text-blue-500 transition-colors"><i class="fa-solid fa-circle-info mr-2"></i> Hướng dẫn thanh toán</a>
-                    <a href="#" class="hover:text-blue-500 transition-colors"><i class="fa-solid fa-headset mr-2"></i> Hỗ trợ kỹ thuật 24/7</a>
-                </div>
-            </div>
-
-            <div class="space-y-4 md:text-right">
-                <p class="text-white text-xs font-black tracking-tighter normal-case tracking-[0.1em]">An toàn & Bảo mật</p>
-                <div class="flex md:justify-end gap-4">
-                    <div class="flex items-center space-x-1.5 bg-slate-800 px-3 py-1.5 rounded-md border border-slate-700">
-                        <i class="fa-solid fa-lock text-blue-500"></i>
-                        <span>SSL Secure</span>
-                    </div>
-                    <div class="flex items-center space-x-1.5 bg-slate-800 px-3 py-1.5 rounded-md border border-slate-700">
-                        <i class="fa-solid fa-bolt text-amber-500"></i>
-                        <span>SePay API</span>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-6 w-full lg:w-auto">
+                <div class="flex flex-col items-center lg:items-end space-y-2">
+                    <p class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600">Secure Protocol</p>
+                    <div class="flex items-center space-x-3">
+                        <i class="fa-brands fa-cc-visa text-2xl"></i>
+                        <i class="fa-brands fa-cc-mastercard text-2xl"></i>
+                        <i class="fa-solid fa-vault text-xl text-blue-500"></i>
                     </div>
                 </div>
-                <p class="opacity-40 italic">Medsystem © 2026. All rights reserved.</p>
+                <div class="flex flex-col items-center lg:items-end space-y-2">
+                    <p class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600">Hỗ trợ đối tác</p>
+                    <span class="text-xs text-slate-300 font-black">@LamThangPhat_Pay</span>
+                </div>
+                <div class="col-span-2 md:col-span-1 flex flex-col items-center lg:items-end justify-center">
+                    <div class="bg-blue-600/10 border border-blue-500/20 px-6 py-3 rounded-2xl flex flex-col items-center">
+                        <p class="text-[8px] font-black text-blue-400 uppercase tracking-widest mb-1">Powered by</p>
+                        <p class="text-white font-black text-xl italic tracking-tighter leading-none">SePay <span class="text-blue-500">API</span></p>
+                    </div>
+                </div>
             </div>
         </div>
     </footer>
@@ -155,6 +196,16 @@
         let checkInterval = null;
         let paymentData = { amt: 0, stk: "", name: "", note: "" };
 
+        // Hiển thị thời gian phiên giao dịch
+        const start = new Date();
+        setInterval(() => {
+            const now = new Date();
+            const diff = Math.floor((now - start) / 1000);
+            const mins = String(Math.floor(diff / 60)).padStart(2, '0');
+            const secs = String(diff % 60).padStart(2, '0');
+            document.getElementById('sessionTime').innerText = `SECURE SESSION: ${mins}:${secs}`;
+        }, 1000);
+
         window.onload = processPayment;
 
         async function processPayment() {
@@ -163,7 +214,7 @@
             const clientUrl = params.get('callback');
 
             if (!packageId) {
-                showError("Giao dịch không xác định.");
+                showError("Giao dịch không hợp lệ. Vui lòng xác định mã gói dịch vụ.");
                 return;
             }
 
@@ -184,6 +235,7 @@
                     const bankName = data.bank_name || "MB Bank";
 
                     const accountNameEncoded = encodeURIComponent(paymentData.name);
+                    // Template 'print' chuyên nghiệp hơn cho Enterprise
                     const qrUrl = `https://img.vietqr.io/image/${bankId}-${paymentData.stk}-print.png?amount=${paymentData.amt}&addInfo=${paymentData.note}&accountName=${accountNameEncoded}`;
                     
                     document.getElementById('qrImg').src = qrUrl;
@@ -191,7 +243,7 @@
                     document.getElementById('qrNoteDisplay').innerText = paymentData.note;
                     document.getElementById('targetName').innerText = paymentData.name;
                     document.getElementById('targetSTK').innerText = paymentData.stk;
-                    document.getElementById('bankDisplay').innerText = `STK (${bankName})`;
+                    document.getElementById('bankDisplay').innerText = `Số tài khoản (${bankName})`;
 
                     document.getElementById('paymentModal').classList.remove('hidden');
                     document.getElementById('paymentModal').classList.add('flex');
@@ -199,10 +251,10 @@
 
                     startPolling(paymentData.note);
                 } else {
-                    throw new Error(data.error);
+                    throw new Error(data.error || "Gói dịch vụ tạm thời không khả dụng.");
                 }
             } catch (err) {
-                showError("Lỗi kết nối: " + err.message);
+                showError("Kết nối gián đoạn: " + err.message);
             }
         }
 
@@ -210,7 +262,7 @@
             navigator.clipboard.writeText(text).then(() => {
                 const tooltip = document.getElementById('tip-' + id);
                 tooltip.style.display = 'block';
-                setTimeout(() => { tooltip.style.display = 'none'; }, 1500);
+                setTimeout(() => { tooltip.style.display = 'none'; }, 1800);
             });
         }
 
@@ -223,25 +275,28 @@
                         clearInterval(checkInterval);
                         showSuccessUI();
                     }
-                } catch (e) { console.log("Checking..."); }
+                } catch (e) { console.log("Status: Waiting for verification..."); }
             }, 3000);
         }
 
         function showSuccessUI() {
             document.getElementById('badgePending').classList.add('hidden');
+            document.getElementById('badgeSuccess').classList.remove('hidden');
             document.getElementById('qrOverlaySuccess').classList.remove('hidden');
             document.getElementById('qrOverlaySuccess').classList.add('flex');
             
             setTimeout(() => {
                 const callback = new URLSearchParams(window.location.search).get('callback');
                 if (callback) window.location.href = callback;
-                else alert("Thanh toán hoàn tất!");
-            }, 3000);
+                else alert("Thanh toán hoàn tất! Cảm ơn quý khách.");
+            }, 4000);
         }
 
         function showError(msg) {
             document.getElementById('mainCard').classList.remove('hidden');
-            document.getElementById('statusTitle').innerText = "Rất tiếc!";
+            const title = document.getElementById('statusTitle');
+            title.innerText = "Lỗi kết nối";
+            title.classList.add('text-red-600');
             const box = document.getElementById('errorBox');
             box.innerText = msg;
             box.classList.remove('hidden');
