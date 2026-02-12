@@ -57,6 +57,7 @@
 </div>
 
 <script>
+    // 🔴 KIỂM TRA: Đảm bảo link này là bản Deploy mới nhất của Master DB (Anyone)
     const GATEWAY_URL = "https://script.google.com/macros/s/AKfycbxx9KT84my36bzSGKdLrgXWhL_kX0X7YFtBlU_VCP3NUVaytDo0cno919NDeY77mg26/exec";
     let checkInterval = null;
 
@@ -64,23 +65,23 @@
 
     async function processPayment() {
         const params = new URLSearchParams(window.location.search);
-        const amount = params.get('amt');
-        const note = params.get('note') || 'Thanh toan';
+        
+        // 1. LẤY MÃ GÓI (Thay vì lấy số tiền trực tiếp để bảo mật)
+        const packageId = params.get('package'); 
         const clientUrl = params.get('callback');
 
-        if (!amount) {
-            showError("Thiếu số tiền thanh toán.");
+        if (!packageId) {
+            showError("Lỗi: Không tìm thấy thông tin gói thanh toán.");
             return;
         }
 
         try {
-            // 1. Đăng ký đơn hàng ngầm qua Script Database
+            // 2. Gọi sang Master DB để đăng ký và lấy giá thật
             const response = await fetch(GATEWAY_URL, {
                 method: "POST",
                 body: JSON.stringify({
                     action: "REGISTER_ORDER",
-                    amount: amount,
-                    note: note,
+                    package_id: packageId,
                     client_url: clientUrl
                 })
             });
@@ -89,21 +90,22 @@
 
             if (data.success) {
                 const orderId = data.order_id;
+                const realAmount = data.amount; // Số tiền thật từ Master DB tra cứu
                 
-                // 2. Tạo Link QR VietQR (Dùng ngân hàng MB của bạn)
-                const qrUrl = `https://img.vietqr.io/image/MB-0345056117-compact.png?amount=${amount}&addInfo=${orderId}`;
+                // 3. Tạo Link QR VietQR với số tiền thật
+                const qrUrl = `https://img.vietqr.io/image/MB-0345056117-compact.png?amount=${realAmount}&addInfo=${orderId}`;
                 
-                // 3. Hiển thị Popup
+                // 4. Hiển thị Popup
                 document.getElementById('qrImg').src = qrUrl;
-                document.getElementById('qrAmount').innerText = parseInt(amount).toLocaleString() + "đ";
+                document.getElementById('qrAmount').innerText = parseInt(realAmount).toLocaleString() + "đ";
                 document.getElementById('qrNote').innerText = orderId;
                 document.getElementById('paymentModal').style.display = 'flex';
                 document.getElementById('mainCard').style.display = 'none';
 
-                // 4. Bắt đầu kiểm tra trạng thái tự động
+                // 5. Bắt đầu kiểm tra trạng thái tự động
                 startPolling(orderId);
             } else {
-                throw new Error(data.error || "Lỗi đăng ký đơn hàng");
+                throw new Error(data.error || "Gói không tồn tại trên hệ thống.");
             }
         } catch (err) {
             showError("Lỗi kết nối: " + err.message);
@@ -113,7 +115,7 @@
     function startPolling(orderId) {
         checkInterval = setInterval(async () => {
             try {
-                // Gọi GET đến Script để kiểm tra xem đơn này đã SUCCESS chưa
+                // Kiểm tra xem Master DB đã ghi nhận SUCCESS chưa
                 const res = await fetch(`${GATEWAY_URL}?action=CHECK_STATUS&order_id=${orderId}`);
                 const status = await res.json();
 
@@ -124,7 +126,7 @@
             } catch (e) {
                 console.log("Đang chờ thanh toán...");
             }
-        }, 3000); // 3 giây kiểm tra 1 lần
+        }, 3000);
     }
 
     function showSuccessUI() {
@@ -136,7 +138,8 @@
             const params = new URLSearchParams(window.location.search);
             const callback = params.get('callback');
             if (callback) {
-                window.location.href = callback; // Quay về Client khi xong
+                // Tự động quay về Client sau khi thành công
+                window.location.href = callback; 
             } else {
                 alert("Thanh toán thành công!");
             }
@@ -146,6 +149,7 @@
     function showError(msg) {
         document.getElementById('spinner').style.display = 'none';
         document.getElementById('statusTitle').innerText = "Thất bại";
+        document.getElementById('statusDesc').style.display = 'none';
         const box = document.getElementById('errorBox');
         box.innerText = msg;
         box.style.display = 'block';
