@@ -173,22 +173,26 @@
         }
 
         function startPolling(orderId) {
-            console.log("🚀 Bắt đầu theo dõi đơn hàng: " + orderId);
-            checkInterval = setInterval(async () => {
-                try {
-                    const res = await fetch(`${GATEWAY_URL}?action=CHECK_STATUS&order_id=${orderId}`);
-                    const status = await res.json();
-                    
-                    // Log để debug (Nhấn F12 để xem)
-                    console.log("🔍 Kiểm tra trạng thái " + orderId + " : " + status.isSuccess);
+    console.log("🚀 Bắt đầu theo dõi đơn hàng: " + orderId);
+    checkInterval = setInterval(async () => {
+        try {
+            // THÊM &nocache=... ĐỂ CHỐNG TRÌNH DUYỆT LƯU KẾT QUẢ CŨ
+            const response = await fetch(`${GATEWAY_URL}?action=CHECK_STATUS&order_id=${orderId}&nocache=${new Date().getTime()}`);
+            const status = await response.json();
+            
+            console.log("🔍 Kiểm tra " + orderId + ":", status.isSuccess);
 
-                    if (status.isSuccess === true) {
-                        clearInterval(checkInterval);
-                        showSuccessUI();
-                    }
-                } catch (e) { console.warn("Mạng lỗi, đang thử lại..."); }
-            }, 3000);
+            // Kiểm tra kỹ giá trị trả về
+            if (status.isSuccess === true || String(status.isSuccess) === "true") {
+                console.log("✅ Đã nhận được thanh toán!");
+                clearInterval(checkInterval);
+                showSuccessUI();
+            }
+        } catch (e) {
+            console.warn("Đang kết nối lại máy chủ...");
         }
+    }, 3000); // 3 giây/lần
+}
 
         function showSuccessUI() {
             document.getElementById('badgePending').classList.add('hidden');
