@@ -27,7 +27,7 @@
 </div>
 
 <script>
-    // 🔴 THAY LINK SERVER TỔNG CỦA BẠN VÀO ĐÂY (Link Google Script đuôi /exec)
+    // Link Server Tổng của bạn (Tôi đã giữ nguyên link bạn cung cấp)
     const GATEWAY_URL = "https://script.google.com/macros/s/AKfycbxx9KT84my36bzSGKdLrgXWhL_kX0X7YFtBlU_VCP3NUVaytDo0cno919NDeY77mg26/exec";
 
     // Tự động chạy khi trang web tải xong
@@ -36,25 +36,20 @@
     };
 
     async function processPayment() {
-        // 1. Lấy thông tin từ URL (Do phần mềm con gửi sang)
-        // Ví dụ: thanhtoan.lamthangphat.com/?amt=50000&note=MuaVip&callback=https://...
         const params = new URLSearchParams(window.location.search);
         const amount = params.get('amt');
         const note = params.get('note');
         const clientUrl = params.get('callback');
 
-        // Kiểm tra dữ liệu đầu vào
         if (!amount || !clientUrl) {
             showError("Thiếu thông tin thanh toán (Số tiền hoặc Link trả về).");
             return;
         }
 
         try {
-            // 2. Gọi về Server Tổng để đăng ký đơn hàng
+            // Gọi về Server Tổng để lấy dữ liệu tạo Form
             const response = await fetch(GATEWAY_URL, {
                 method: "POST",
-                // Google Script yêu cầu mode no-cors hoặc redirect, nhưng để lấy JSON ta dùng cách chuẩn:
-                // Lưu ý: Cần deploy Web App quyền "Anyone" thì mới fetch được
                 body: JSON.stringify({
                     action: "REGISTER_ORDER",
                     amount: amount,
@@ -65,19 +60,43 @@
 
             const data = await response.json();
 
-            // 3. Xử lý kết quả trả về
-            if (data.success && data.url) {
+            // --- ĐOẠN XỬ LÝ MỚI (FIX LỖI 404) ---
+            // Kiểm tra xem server có trả về dữ liệu payment_data không
+            if (data.success && data.payment_data) {
                 document.getElementById('statusTitle').innerText = "Đang chuyển hướng...";
-                // Chuyển khách sang SePay
-                window.location.href = data.url;
+                
+                // Gọi hàm tạo Form POST và gửi đi ngay lập tức
+                postToSePay(data.payment_data.endpoint, data.payment_data.params);
+                
             } else {
-                throw new Error(data.error || "Không lấy được link thanh toán");
+                throw new Error(data.error || "Không lấy được dữ liệu thanh toán");
             }
 
         } catch (err) {
             console.error(err);
             showError("Lỗi kết nối máy chủ: " + err.message);
         }
+    }
+
+    // --- HÀM MỚI: TẠO FORM ẨN VÀ POST SANG SEPAY ---
+    function postToSePay(endpoint, params) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = endpoint;
+        
+        // Tạo các thẻ input ẩn cho từng tham số
+        for (const key in params) {
+            if (params.hasOwnProperty(key)) {
+                const hiddenField = document.createElement('input');
+                hiddenField.type = 'hidden';
+                hiddenField.name = key;
+                hiddenField.value = params[key];
+                form.appendChild(hiddenField);
+            }
+        }
+
+        document.body.appendChild(form);
+        form.submit(); // Tự động bấm nút gửi
     }
 
     function showError(msg) {
