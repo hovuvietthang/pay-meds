@@ -42,10 +42,10 @@
 
         @keyframes scan { 0% { top: 0%; } 100% { top: 100%; } }
         .scan-line {
-            height: 2px;
+            height: 4px;
             background: linear-gradient(to right, transparent, var(--meds-primary), transparent);
             position: absolute;
-            width: 100%;
+            width: 90%;
             z-index: 10;
             animation: scan 3s linear infinite;
         }
@@ -178,7 +178,7 @@
 
                     <div class="p-6 space-y-4">
                         <div class="bg-white/50 p-4 rounded-xl border border-white/80 shadow-sm relative group">
-                            <p class="text-[9px] font-black text-slate-400 uppercase mb-1 italic">ID Khách hàng (Vui lòng xác nhận chính xác đường dẫn sử dụng phần mềm)</p>
+                            <p class="text-[9px] font-black text-slate-400 uppercase mb-1">ID Khách hàng <span class="bold">(Vui lòng xác nhận chính xác đường dẫn sử dụng phần mềm)</span></span></p>
                             <div id="displayCallback" class="text-[10px] font-bold text-slate-600 break-all leading-relaxed">---</div>
                         </div>
 
@@ -188,7 +188,7 @@
                                 <p id="displayPackage" class="text-xs font-black text-[#1c66da] uppercase">---</p>
                             </div>
                             <div class="relative group bg-[#1c66da] p-3 rounded-xl cursor-pointer transition-all active:scale-[0.98] text-white" onclick="copyText(paymentData.amt, 'amt')">
-                                <p class="text-[9px] font-black uppercase mb-0.5 opacity-70">Giá trị (VNĐ)</p>
+                                <p class="text-[9px] font-black uppercase mb-0.5 opacity-70">Giá trị thanh toán (VNĐ)</p>
                                 <p id="qrAmountDisplay" class="text-xl font-black">0đ</p>
                                 <span id="tip-amt" class="copy-tooltip bg-slate-900">Đã chép tiền</span>
                             </div>
