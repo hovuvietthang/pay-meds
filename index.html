@@ -445,7 +445,7 @@ async function processPayment() {
             document.getElementById('mainCard').classList.add('hidden');
             document.getElementById('qnaSection').classList.remove('hidden');
 
-            startTimer(600); // 10 phút
+            startTimer(3); // 10 phút
             startPolling(paymentData.note);
         } else { throw new Error(data.error); }
     } catch (err) { showError("Lỗi: " + err.message); }
