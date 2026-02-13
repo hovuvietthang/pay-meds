@@ -409,6 +409,7 @@
        const GATEWAY_URL = "https://script.google.com/macros/s/AKfycbxx9KT84my36bzSGKdLrgXWhL_kX0X7YFtBlU_VCP3NUVaytDo0cno919NDeY77mg26/exec";
 let checkInterval = null;
 let timerInterval = null;
+let isFinished = false; // Biến cờ để chặn các trạng thái chồng chéo
 let paymentData = { amt: 0, stk: "", name: "", note: "" };
 
 window.onload = processPayment;
@@ -433,26 +434,19 @@ async function processPayment() {
             paymentData = { amt: data.amount, stk: data.account_no, name: data.account_name, note: data.order_id };
             const bankId = data.bank_id || "970422";
             
-            // Cập nhật ảnh QR
             document.getElementById('qrImg').src = `https://img.vietqr.io/image/${bankId}-${paymentData.stk}-print.png?amount=${paymentData.amt}&addInfo=${paymentData.note}&accountName=${encodeURIComponent(paymentData.name)}`;
-            
-            // Cập nhật text hiển thị
             document.getElementById('qrAmountDisplay').innerText = parseInt(paymentData.amt).toLocaleString() + "đ";
             document.getElementById('qrNoteDisplay').innerText = paymentData.note;
             document.getElementById('targetName').innerText = paymentData.name;
             document.getElementById('targetSTK').innerText = paymentData.stk;
             document.getElementById('bankDisplay').innerText = `Số tài khoản (${data.bank_name || 'MBBank'})`;
             
-            // Chuyển đổi giao diện
             document.getElementById('paymentModal').classList.remove('hidden');
             document.getElementById('mainCard').classList.add('hidden');
             document.getElementById('qnaSection').classList.remove('hidden');
 
-            // 1. CHỈNH LẠI: 600 giây = 10 phút
-            startTimer(600); 
-            // 2. Bắt đầu kiểm tra giao dịch
+            startTimer(600); // 10 phút
             startPolling(paymentData.note);
-            
         } else { throw new Error(data.error); }
     } catch (err) { showError("Lỗi: " + err.message); }
 }
@@ -460,46 +454,95 @@ async function processPayment() {
 function startTimer(seconds) {
     let timer = seconds;
     if (timerInterval) clearInterval(timerInterval);
-    
     timerInterval = setInterval(() => {
+        if (isFinished) return; // Nếu đã thành công thì không chạy timer nữa
+
         let m = Math.floor(timer / 60);
         let s = timer % 60;
         document.getElementById('countdown').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
         
         if (--timer < 0) {
-            // DỪNG TẤT CẢ KHI HẾT HẠN
-            clearInterval(timerInterval);
-            clearInterval(checkInterval); // QUAN TRỌNG: Dừng polling
-            
-            // Hiển thị Overlay chặn mã QR
-            const expiredOverlay = document.getElementById('qrOverlayExpired');
-            expiredOverlay.classList.remove('hidden');
-            expiredOverlay.classList.add('flex'); // Đảm bảo nó hiện theo kiểu flex để căn giữa nội dung
-            
-            // Đổi màu badge trạng thái sang màu đỏ
-            const badge = document.getElementById('badgePending');
-            badge.innerText = "Đã quá hạn";
-            badge.className = "bg-red-50 text-red-600 px-3 py-0.5 rounded-full text-[9px] font-black uppercase border border-red-100 italic";
+            stopAllProcesses();
+            showExpiredUI();
         }
     }, 1000);
 }
 
 function startPolling(orderId) {
-    // Dọn dẹp interval cũ nếu có
     if (checkInterval) clearInterval(checkInterval);
-    
     checkInterval = setInterval(async () => {
+        if (isFinished) return;
+
         try {
             const response = await fetch(`${GATEWAY_URL}?action=CHECK_STATUS&order_id=${orderId}&nocache=${new Date().getTime()}`);
             const status = await response.json();
             
             if (status.isSuccess === true || String(status.isSuccess) === "true") {
-                clearInterval(checkInterval);
-                clearInterval(timerInterval); // Thành công thì dừng luôn bộ đếm
+                stopAllProcesses();
                 showSuccessUI();
             }
         } catch (e) { console.warn("Syncing..."); }
     }, 3000);
+}
+
+// Hàm dừng mọi hoạt động (Timer & Polling)
+function stopAllProcesses() {
+    isFinished = true;
+    clearInterval(timerInterval);
+    clearInterval(checkInterval);
+}
+
+// Giao diện khi thành công
+function showSuccessUI() {
+    const badge = document.getElementById('badgePending');
+    if (badge) {
+        badge.innerText = "Thành công";
+        badge.className = "bg-emerald-100 text-emerald-700 px-3 py-0.5 rounded-full text-[9px] font-black uppercase border border-emerald-200 italic";
+    }
+    const overlay = document.getElementById('qrOverlaySuccess');
+    if (overlay) {
+        overlay.classList.remove('hidden');
+        overlay.classList.add('flex');
+    }
+    
+    setTimeout(() => {
+        const callback = new URLSearchParams(window.location.search).get('callback');
+        if (callback) window.location.href = callback;
+        else alert("Cảm ơn! Giao dịch của bạn đã hoàn tất.");
+    }, 3000);
+}
+
+// Giao diện khi hết hạn
+function showExpiredUI() {
+    const overlay = document.getElementById('qrOverlayExpired');
+    if (overlay) {
+        overlay.classList.remove('hidden');
+        overlay.classList.add('flex');
+    }
+    const badge = document.getElementById('badgePending');
+    if (badge) {
+        badge.innerText = "Yêu cầu hết hạn";
+        badge.className = "bg-red-50 text-red-600 px-3 py-0.5 rounded-full text-[9px] font-black uppercase border border-red-100 italic";
+    }
+}
+
+function copyText(text, id) {
+    navigator.clipboard.writeText(text).then(() => {
+        const tooltip = document.getElementById('tip-' + id);
+        if (tooltip) {
+            tooltip.style.display = 'block';
+            setTimeout(() => { tooltip.style.display = 'none'; }, 1500);
+        }
+    });
+}
+
+function showError(msg) {
+    document.getElementById('mainCard').classList.remove('hidden');
+    const box = document.getElementById('errorBox');
+    if (box) {
+        box.innerText = msg;
+        box.classList.remove('hidden');
+    }
 }
     </script>
 </body>
