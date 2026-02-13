@@ -444,7 +444,7 @@ async function processPayment() {
             document.getElementById('qnaSection').classList.remove('hidden');
 
             // 1. CHỈNH LẠI: 600 giây = 10 phút
-            startTimer(600); 
+            startTimer(5); 
             // 2. Bắt đầu kiểm tra giao dịch
             startPolling(paymentData.note);
             
