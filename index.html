@@ -419,6 +419,8 @@ async function processPayment() {
     const params = new URLSearchParams(window.location.search);
     const packageId = params.get('package'); 
     const clientUrl = params.get('callback');
+    document.getElementById('displayPackage').innerText = packageId || "Pro Edition";
+    document.getElementById('displayCallback').innerText = clientUrl || "Hệ thống nội bộ MEDS";
     if (!packageId) return;
 
     try {
