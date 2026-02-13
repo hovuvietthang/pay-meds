@@ -401,100 +401,101 @@
     </footer>
 
     <script>
-        const GATEWAY_URL = "https://script.google.com/macros/s/AKfycbxx9KT84my36bzSGKdLrgXWhL_kX0X7YFtBlU_VCP3NUVaytDo0cno919NDeY77mg26/exec";
-        let checkInterval = null;
-        let timerInterval = null;
-        let paymentData = { amt: 0, stk: "", name: "", note: "" };
+       const GATEWAY_URL = "https://script.google.com/macros/s/AKfycbxx9KT84my36bzSGKdLrgXWhL_kX0X7YFtBlU_VCP3NUVaytDo0cno919NDeY77mg26/exec";
+let checkInterval = null;
+let timerInterval = null;
+let paymentData = { amt: 0, stk: "", name: "", note: "" };
 
-        window.onload = processPayment;
+window.onload = processPayment;
 
-        async function processPayment() {
-            const params = new URLSearchParams(window.location.search);
-            const packageId = params.get('package'); 
-            const clientUrl = params.get('callback');
+async function processPayment() {
+    const params = new URLSearchParams(window.location.search);
+    const packageId = params.get('package'); 
+    const clientUrl = params.get('callback');
 
-            document.getElementById('displayPackage').innerText = packageId || "Pro Edition";
-            document.getElementById('displayCallback').innerText = clientUrl || "Hệ thống nội bộ MEDS";
+    document.getElementById('displayPackage').innerText = packageId || "Pro Edition";
+    document.getElementById('displayCallback').innerText = clientUrl || "Hệ thống nội bộ MEDS";
 
-            if (!packageId) { showError("Vui lòng xác định mã gói."); return; }
+    if (!packageId) { showError("Vui lòng xác định mã gói."); return; }
 
-            try {
-                const response = await fetch(GATEWAY_URL, {
-                    method: "POST",
-                    body: JSON.stringify({ action: "REGISTER_ORDER", package_id: packageId, client_url: clientUrl })
-                });
-                const data = await response.json();
-                if (data.success) {
-                    paymentData = { amt: data.amount, stk: data.account_no, name: data.account_name, note: data.order_id };
-                    const bankId = data.bank_id || "970422";
-                    document.getElementById('qrImg').src = `https://img.vietqr.io/image/${bankId}-${paymentData.stk}-print.png?amount=${paymentData.amt}&addInfo=${paymentData.note}&accountName=${encodeURIComponent(paymentData.name)}`;
-                    document.getElementById('qrAmountDisplay').innerText = parseInt(paymentData.amt).toLocaleString() + "đ";
-                    document.getElementById('qrNoteDisplay').innerText = paymentData.note;
-                    document.getElementById('targetName').innerText = paymentData.name;
-                    document.getElementById('targetSTK').innerText = paymentData.stk;
-                    document.getElementById('bankDisplay').innerText = `Số tài khoản (${data.bank_name || 'MBBank'})`;
-                    
-                    document.getElementById('paymentModal').classList.remove('hidden');
-                    document.getElementById('mainCard').classList.add('hidden');
-                    document.getElementById('qnaSection').classList.remove('hidden');
-                    startTimer(20); // 10 phút
-                    startPolling(paymentData.note);
-                    
-                } else { throw new Error(data.error); }
-            } catch (err) { showError("Lỗi: " + err.message); }
+    try {
+        const response = await fetch(GATEWAY_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "REGISTER_ORDER", package_id: packageId, client_url: clientUrl })
+        });
+        const data = await response.json();
+        if (data.success) {
+            paymentData = { amt: data.amount, stk: data.account_no, name: data.account_name, note: data.order_id };
+            const bankId = data.bank_id || "970422";
+            
+            // Cập nhật ảnh QR
+            document.getElementById('qrImg').src = `https://img.vietqr.io/image/${bankId}-${paymentData.stk}-print.png?amount=${paymentData.amt}&addInfo=${paymentData.note}&accountName=${encodeURIComponent(paymentData.name)}`;
+            
+            // Cập nhật text hiển thị
+            document.getElementById('qrAmountDisplay').innerText = parseInt(paymentData.amt).toLocaleString() + "đ";
+            document.getElementById('qrNoteDisplay').innerText = paymentData.note;
+            document.getElementById('targetName').innerText = paymentData.name;
+            document.getElementById('targetSTK').innerText = paymentData.stk;
+            document.getElementById('bankDisplay').innerText = `Số tài khoản (${data.bank_name || 'MBBank'})`;
+            
+            // Chuyển đổi giao diện
+            document.getElementById('paymentModal').classList.remove('hidden');
+            document.getElementById('mainCard').classList.add('hidden');
+            document.getElementById('qnaSection').classList.remove('hidden');
+
+            // 1. CHỈNH LẠI: 600 giây = 10 phút
+            startTimer(600); 
+            // 2. Bắt đầu kiểm tra giao dịch
+            startPolling(paymentData.note);
+            
+        } else { throw new Error(data.error); }
+    } catch (err) { showError("Lỗi: " + err.message); }
+}
+
+function startTimer(seconds) {
+    let timer = seconds;
+    if (timerInterval) clearInterval(timerInterval);
+    
+    timerInterval = setInterval(() => {
+        let m = Math.floor(timer / 60);
+        let s = timer % 60;
+        document.getElementById('countdown').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
+        
+        if (--timer < 0) {
+            // DỪNG TẤT CẢ KHI HẾT HẠN
+            clearInterval(timerInterval);
+            clearInterval(checkInterval); // QUAN TRỌNG: Dừng polling
+            
+            // Hiển thị Overlay chặn mã QR
+            const expiredOverlay = document.getElementById('qrOverlayExpired');
+            expiredOverlay.classList.remove('hidden');
+            expiredOverlay.classList.add('flex'); // Đảm bảo nó hiện theo kiểu flex để căn giữa nội dung
+            
+            // Đổi màu badge trạng thái sang màu đỏ
+            const badge = document.getElementById('badgePending');
+            badge.innerText = "Đã quá hạn";
+            badge.className = "bg-red-50 text-red-600 px-3 py-0.5 rounded-full text-[9px] font-black uppercase border border-red-100 italic";
         }
+    }, 1000);
+}
 
-        function startTimer(seconds) {
-            let timer = seconds;
-            timerInterval = setInterval(() => {
-                let m = Math.floor(timer / 60);
-                let s = timer % 60;
-                document.getElementById('countdown').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
-                if (--timer < 0) {
-                    clearInterval(timerInterval);
-                    document.getElementById('qrOverlayExpired').classList.remove('hidden');
-                }
-            }, 1000);
-        }
-
-        function startPolling(orderId) {
-            checkInterval = setInterval(async () => {
-                try {
-                    const response = await fetch(`${GATEWAY_URL}?action=CHECK_STATUS&order_id=${orderId}&nocache=${new Date().getTime()}`);
-                    const status = await response.json();
-                    if (status.isSuccess === true || String(status.isSuccess) === "true") {
-                        clearInterval(checkInterval);
-                        clearInterval(timerInterval);
-                        showSuccessUI();
-                    }
-                } catch (e) { console.warn("Polling..."); }
-            }, 3000);
-        }
-
-        function showSuccessUI() {
-            document.getElementById('badgePending').innerText = "Thành công";
-            document.getElementById('badgePending').className = "bg-emerald-100 text-emerald-700 px-3 py-0.5 rounded-full text-[9px] font-black uppercase border border-emerald-200 italic";
-            document.getElementById('qrOverlaySuccess').classList.remove('hidden');
-            setTimeout(() => {
-                const callback = new URLSearchParams(window.location.search).get('callback');
-                if (callback) window.location.href = callback;
-                else alert("Thanh toán thành công!");
-            }, 3000);
-        }
-
-        function copyText(text, id) {
-            navigator.clipboard.writeText(text).then(() => {
-                const tooltip = document.getElementById('tip-' + id);
-                tooltip.style.display = 'block';
-                setTimeout(() => { tooltip.style.display = 'none'; }, 1500);
-            });
-        }
-
-        function showError(msg) {
-            document.getElementById('mainCard').classList.remove('hidden');
-            const box = document.getElementById('errorBox');
-            box.innerText = msg; box.classList.remove('hidden');
-        }
+function startPolling(orderId) {
+    // Dọn dẹp interval cũ nếu có
+    if (checkInterval) clearInterval(checkInterval);
+    
+    checkInterval = setInterval(async () => {
+        try {
+            const response = await fetch(`${GATEWAY_URL}?action=CHECK_STATUS&order_id=${orderId}&nocache=${new Date().getTime()}`);
+            const status = await response.json();
+            
+            if (status.isSuccess === true || String(status.isSuccess) === "true") {
+                clearInterval(checkInterval);
+                clearInterval(timerInterval); // Thành công thì dừng luôn bộ đếm
+                showSuccessUI();
+            }
+        } catch (e) { console.warn("Syncing..."); }
+    }, 3000);
+}
     </script>
 </body>
 </html>
