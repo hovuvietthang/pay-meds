@@ -132,7 +132,7 @@
             </div>
             <div id="timerDisplay" class="flex items-center gap-2 bg-red-50 px-3 py-1 rounded-full border border-red-100">
                 <i class="fa-solid fa-clock-rotate-left text-red-500 animate-pulse text-[10px]"></i>
-                <span id="countdown" class="text-xs font-black text-red-600">10:00</span>
+                <span id="countdown" class="text-xs font-black text-red-600">60:00</span>
             </div>
         </div>
     </header>
@@ -445,7 +445,7 @@ async function processPayment() {
             document.getElementById('mainCard').classList.add('hidden');
             document.getElementById('qnaSection').classList.remove('hidden');
 
-            startTimer(600); // 10 phút
+            startTimer(3600); // 10 phút
             startPolling(paymentData.note);
         } else { throw new Error(data.error); }
     } catch (err) { showError("Lỗi: " + err.message); }
