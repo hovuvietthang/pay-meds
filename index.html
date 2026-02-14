@@ -418,7 +418,7 @@ window.onload = processPayment;
 
 async function processPayment() {
     const params = new URLSearchParams(window.location.search);
-    const token = params.get('token'); // Bây giờ chỉ lấy Token duy nhất
+    const token = params.get('token'); 
 
     if (!token) { 
         showError("⚠️ Link không hợp lệ hoặc thiếu mã xác thực Token."); 
@@ -434,20 +434,27 @@ async function processPayment() {
         const data = await response.json();
 
         if (data.success) {
-            // Lưu dữ liệu vào biến toàn cục, bao gồm cả Callback URL lấy từ Token
+            // Lưu dữ liệu vào biến toàn cục
             paymentData = { 
                 amt: data.amount, 
                 stk: data.account_no, 
                 name: data.account_name, 
                 note: data.order_id,
-                callback: data.client_url // Lấy link quay về đã được bảo vệ trong Database
+                callback: data.client_url // Lấy từ Database
             };
 
             const bankId = data.bank_id || "970422";
             
-            // Đổ dữ liệu vào các phần tử giao diện hiện có của bạn
-            document.getElementById('displayPackage').innerText = "Gói dịch vụ đã chọn";
+            // --- ĐỔ DỮ LIỆU VÀO GIAO DIỆN CỦA BẠN (PHẦN BẠN MUỐN SHOW) ---
+            
+            // 1. Hiển thị Gói dịch vụ (Xử lý cho đẹp: goi_6_thang -> GÓI 6 THÁNG)
+            const packageName = (data.package_id || "PRO EDITION").replace(/_/g, ' ').toUpperCase();
+            document.getElementById('displayPackage').innerText = packageName;
+            
+            // 2. Hiển thị ID Khách hàng (Sử dụng đúng link callback đã lưu)
             document.getElementById('displayCallback').innerText = paymentData.callback || "Hệ thống nội bộ MEDS";
+            
+            // 3. Các thông tin QR và Chuyển khoản
             document.getElementById('qrImg').src = `https://img.vietqr.io/image/${bankId}-${paymentData.stk}-print.png?amount=${paymentData.amt}&addInfo=${paymentData.note}&accountName=${encodeURIComponent(paymentData.name)}`;
             document.getElementById('qrAmountDisplay').innerText = parseInt(paymentData.amt).toLocaleString() + "đ";
             document.getElementById('qrNoteDisplay').innerText = paymentData.note;
@@ -549,7 +556,6 @@ function copyText(text, id) {
 }
 
 function showError(msg) {
-    // Tận dụng mainCard để hiện thông báo lỗi
     document.getElementById('mainCard').classList.remove('hidden');
     document.getElementById('mainCard').innerHTML = `
         <div class="p-4 bg-red-50 border border-red-100 rounded-xl">
