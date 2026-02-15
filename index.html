@@ -502,7 +502,7 @@ function startPolling(orderId) {
                 
                 let message = "Thanh toán thành công!";
                 if (result.status === "SUCCESS_OVERPAID") {
-                    message = "Thanh toán thành công! Bạn chuyển thừa tiền, vui lòng liên hệ hotline để nhận lại tiền dư.";
+                    message = "Thanh toán thành công! Bạn chuyển thừa tiền, vui lòng liên hệ hotline: 0345.056.117 để nhận lại tiền dư.";
                 }
 
                 showSuccessUI(message, result.redirect_url);
@@ -510,7 +510,7 @@ function startPolling(orderId) {
             // TRƯỜNG HỢP 2: SAI SỐ TIỀN (CHUYỂN THIẾU)
             else if (result.status === "FAILED_AMOUNT") {
                 stopAllProcesses(); // Dừng hỏi vì đã phát hiện lỗi tiền
-                showError(`⚠️ ${result.note}. Vui lòng liên hệ hỗ trợ.`);
+                showError(`⚠️ ${result.note}. Hệ thống phát hiện chuyển sai số tiền thanh toán. Vui lòng liên hệ hotline: 0345.056.117 để hoàn tiền.`);
             }
         } catch (e) { console.warn("Đang đồng bộ..."); }
     }, 3000);
@@ -519,7 +519,7 @@ function startPolling(orderId) {
 function showSuccessUI(msg, redirectUrl) {
     const badge = document.getElementById('badgePending');
     if (badge) {
-        badge.innerText = "Hoàn tất";
+        badge.innerText = "Thanh toán thành công";
         badge.className = "bg-emerald-100 text-emerald-700 px-3 py-0.5 rounded-full text-[10px] font-black border border-emerald-200";
     }
     
